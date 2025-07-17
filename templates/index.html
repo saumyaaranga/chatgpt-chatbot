@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>AI Article Generator</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', sans-serif;
+      margin: 0;
+      padding: 0;
+      min-height: 100vh;
+      background-color: #121212;
+      background-image:
+        radial-gradient(circle at 10% 20%, rgba(255,255,255,0.03) 0%, transparent 30%),
+        radial-gradient(circle at 90% 80%, rgba(255,255,255,0.03) 0%, transparent 30%),
+        url('https://www.transparenttextures.com/patterns/dark-mosaic.png');
+      background-repeat: repeat;
+      background-size: cover;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      padding: 60px 20px;
+      color: #eee;
+    }
+
+    .container {
+      background-color: #fff;
+      color: #111;
+      border-radius: 16px;
+      padding: 40px;
+      width: 100%;
+      max-width: 800px;
+      box-shadow: 0 0 50px rgba(255, 255, 255, 0.08);
+    }
+
+    h1 {
+      text-align: center;
+      color: #000;
+      font-weight: 700;
+      font-size: 28px;
+    }
+
+    textarea {
+      width: 100%;
+      height: 100px;
+      padding: 14px;
+      font-size: 16px;
+      border-radius: 10px;
+      border: 1px solid #ccc;
+      background-color: #f9f9f9;
+      color: #111;
+      resize: none;
+      margin-top: 15px;
+    }
+
+    button {
+      margin-top: 20px;
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      background-color: #000;
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #333;
+    }
+
+    .answer-box {
+      margin-top: 30px;
+      background-color: #f0f0f0;
+      border-left: 5px solid #000;
+      padding: 20px;
+      border-radius: 12px;
+      color: #111;
+      display: none;
+      line-height: 1.6;
+    }
+
+    .answer-box h2,
+    .answer-box h3 {
+      color: #000;
+    }
+
+    img {
+      max-width: 100%;
+      margin: 20px 0;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+    }
+
+    ::selection {
+      background: #000;
+      color: #fff;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="container">
+    <h1>🧠 AI Article Generator</h1>
+    <textarea id="question" placeholder="Ask something smart..."></textarea>
+    <button onclick="ask()">Generate Article</button>
+
+    <div class="answer-box" id="answerBox">
+      <div id="finalAnswer">Generating article...</div>
+    </div>
+  </div>
+
+  <script>
+    async function ask() {
+      const question = document.getElementById("question").value.trim();
+      const answerBox = document.getElementById("answerBox");
+      const finalAnswer = document.getElementById("finalAnswer");
+
+      if (!question) {
+        alert("Please enter a question!");
+        return;
+      }
+
+      finalAnswer.innerHTML = "⚙️ Thinking...";
+      answerBox.style.display = "block";
+
+      const res = await fetch("/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+
+      const data = await res.json();
+
+      let html = `<h2>📝 Final Merged Article</h2>`;
+      html += marked.parse(data.final || "No article generated.");
+
+      if (data.images && data.images.length > 0) {
+        html += `<h2>🖼️ Generated Images</h2>`;
+        data.images.forEach(img => {
+          if (img.base64 && img.base64.length > 50) {
+            html += `
+              <div style="margin: 20px 0;">
+                <p><em>${img.prompt}</em></p>
+                <img src="data:image/png;base64,${img.base64}" alt="${img.prompt}" />
+              </div>
+            `;
+          } else if (img.url && img.url.startsWith("http")) {
+            html += `
+              <div style="margin: 20px 0;">
+                <p><em>${img.prompt}</em></p>
+                <img src="${img.url}" alt="${img.prompt}" />
+              </div>
+            `;
+          } else {
+            html += `<p style="color:red;">❌ Failed to load image for: ${img.prompt}</p>`;
+          }
+        });
+      }
+
+      finalAnswer.innerHTML = html;
+      answerBox.scrollIntoView({ behavior: "smooth" });
+    }
+  </script>
+
+</body>
+</html>
