@@ -105,5 +105,5 @@ def handle_question():
         "images": images
     })
 
-# ✅ Required by Vercel (must be present at the bottom)
+# ✅ Required by Vercel — exposes the Flask app
 app = app
