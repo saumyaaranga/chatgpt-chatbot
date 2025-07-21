@@ -1,8 +1,8 @@
 from flask import Flask, request, jsonify, render_template
 import os
 import openai
-from google import genai
-from google.genai import types
+import google.generativeai as genai  # ✅ Correct import
+from google.generativeai import types  # ✅ Correct import
 import base64
 import time
 from flask_cors import CORS
