@@ -8,12 +8,12 @@ import time
 from flask_cors import CORS
 
 # ✅ Setup Flask
-app = Flask(__name__)
+app = Flask(__name__, template_folder=os.path.join(os.path.dirname(__file__), '..', 'templates'))
 CORS(app)
-
+print("🔥 Flask app is starting...")
 # ✅ Load environment variables
-OPENROUTER_API_KEY = os.getenv("OPENROUTER_API_KEY")
-GENAI_API_KEY = os.getenv("GENAI_API_KEY")
+OPENROUTER_API_KEY ="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"
+GENAI_API_KEY ="AIzaSyAmqlLAHoDRVll5mTT7GEyCm_jHKSvwAMo"
 
 # ✅ Configure OpenRouter client
 openai_router_client = openai.OpenAI(
@@ -22,7 +22,8 @@ openai_router_client = openai.OpenAI(
 )
 
 # ✅ Configure Gemini client
-genai_client = genai.Client(api_key=GENAI_API_KEY)
+genai.configure(api_key=GENAI_API_KEY)
+
 
 # ✅ GPT Helper
 def ask_gpt(prompt, model="openai/gpt-4.1-nano"):
@@ -54,18 +55,19 @@ def ask_deepseek(prompt):
 def generate_image(prompt):
     print(f"🎨 Gemini image prompt: {prompt}")
     try:
-        resp = genai_client.models.generate_content(
-            model="gemini-2.0-flash-preview-image-generation",
-            contents=prompt,
-            config=types.GenerateContentConfig(response_modalities=["TEXT", "IMAGE"])
+        model = genai.GenerativeModel("gemini-2.0-flash-preview-image-generation")
+        resp = model.generate_content(
+            prompt,
+            generation_config=types.GenerationConfig(response_modality=["IMAGE"])
         )
         for part in resp.candidates[0].content.parts:
-            if part.inline_data is not None:
+            if hasattr(part, "inline_data") and part.inline_data is not None:
                 return base64.b64encode(part.inline_data.data).decode()
         return None
     except Exception as e:
         print("❌ Gemini image error:", e)
         return None
+
 
 # ✅ Route: Homepage
 @app.route("/")
@@ -108,5 +110,11 @@ def handle_question():
         })
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+@app.route("/test")
+def test():
+    return "✅ Flask is working on Vercel!"
+if __name__ == "__main__":
+    app.run(debug=True)
+
 
 # ✅ NOTE: No app.run() here — Vercel auto-handles it
